@@ -3,10 +3,14 @@ package main
 import (
 	"net/http"
 
+	"exapmle.com/invoice-storage/internal/repository"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+
+	repository.NewDatabase()
+
 	r := gin.Default()
 
 	r.POST("/invoice", func(c *gin.Context) {

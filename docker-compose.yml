@@ -2,5 +2,40 @@ services:
   invoice:
     build: ./services/invoice-storage
     container_name: invoice-storage-service
+    env_file:
+      - ./services/invoice-storage/.env
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "3000:8080"
+    networks:
+      - app_network
+    restart: always
+
+  db:
+    image: postgres:15-alpine
+    container_name: invoice-storage-db
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypw
+      - POSTGRES_DB=mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./services/invoice-storage/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app_network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  app_network:
+
+volumes:
+  postgres_data:

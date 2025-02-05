@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS invoices (
+    id SERIAL PRIMARY KEY,
+    file_path VARCHAR(64) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    period_start TIMESTAMP NOT NULL,
+    period_end TIMESTAMP NOT NULL
+);
