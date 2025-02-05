@@ -1,0 +1,6 @@
+services:
+  invoice:
+    build: ./services/invoice-storage
+    container_name: invoice-storage-service
+    ports:
+      - "3000:8080"
