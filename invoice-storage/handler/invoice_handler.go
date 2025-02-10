@@ -8,11 +8,11 @@ import (
 
 type InvoiceHandler struct{}
 
-func NewInvoice() *InvoiceHandler {
+func NewInvoiceHandler() *InvoiceHandler {
 	return &InvoiceHandler{}
 }
 
-func (h *InvoiceHandler) StoreInvoice(c *gin.Context) {
+func (h *InvoiceHandler) Save(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"hello": "world",
 	})
