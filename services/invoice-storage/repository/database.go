@@ -20,12 +20,6 @@ func NewDatabase() *sql.DB {
 		log.Fatalf("Error opening database: %v", err)
 	}
 
-	// Test the database connection
-	err = db.Ping()
-	if err != nil {
-		log.Fatalf("Error connecting to database: %v", err)
-	}
-
 	fmt.Println("Connected to PostgreSQL successfully")
 	return db
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"exapmle.com/invoice-storage/internal/repository"
+	"exapmle.com/invoice-storage/repository"
 	"github.com/gin-gonic/gin"
 )
 
