@@ -1,6 +1,7 @@
 package main
 
 import (
+	"example.com/invoice-storage/database"
 	"example.com/invoice-storage/handler"
 	"example.com/invoice-storage/repository"
 	"example.com/invoice-storage/service"
@@ -8,13 +9,15 @@ import (
 )
 
 func main() {
-
-	repository.NewDatabase()
-	handler.NewInvoiceHandler()
-	service.NewInvoiceService()
+	db := database.New()
+	invoiceRepository := repository.NewInvoiceRepository(db)
+	invoiceService := service.NewInvoiceService(invoiceRepository)
+	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
 
 	r := gin.Default()
 
-	r.POST("/invoice", ih.StoreInvoice)
+	r.POST("/invoice", invoiceHandler.Save)
+
 	r.Run()
+
 }
