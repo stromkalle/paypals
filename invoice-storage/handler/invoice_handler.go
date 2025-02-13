@@ -18,10 +18,35 @@ func NewInvoiceHandler(invoiceService service.InvoiceService) *InvoiceHandler {
 
 func (h *InvoiceHandler) Save(c *gin.Context) {
 
-	fmt.Println("Saving invoice in handler")
-	h.invoiceService.Save("C://Users/hello-world")
+	fh, err := c.FormFile("csv")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to get CSV file",
+		})
+		return
+	}
+
+	csvFile, err := fh.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to open CSV file",
+		})
+		return
+	}
+
+	defer csvFile.Close()
+
+	invoice, err := h.invoiceService.Save(csvFile)
+
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to save invoice",
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"hello": "world",
+		"invoice": invoice,
 	})
 }

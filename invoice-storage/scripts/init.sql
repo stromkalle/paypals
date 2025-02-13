@@ -1,7 +1,16 @@
 CREATE TABLE IF NOT EXISTS invoices (
     id SERIAL PRIMARY KEY,
-    file_path VARCHAR(64) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    period_start TIMESTAMP NOT NULL,
-    period_end TIMESTAMP NOT NULL
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+    id SERIAL PRIMARY KEY,
+    invoice_id INT NOT NULL REFERENCES invoices(id),
+    amount DECIMAL(10, 2) NOT NULL,
+    date TIMESTAMP NOT NULL,
+    buyer VARCHAR(255) NOT NULL,
+    vendor VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
