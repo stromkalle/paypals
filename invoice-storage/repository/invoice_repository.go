@@ -9,8 +9,9 @@ import (
 )
 
 type InvoiceRepository interface {
-	Save(domain.CreateInvoice) (domain.Invoice, error)
-	Get(int64) (domain.Invoice, error)
+	Save(domain.CreateInvoice) (string, error)
+	GetInvoice(string) (domain.Invoice, error)
+	GetTransactions(string) ([]domain.Transaction, error)
 }
 
 type SQLInvoiceRepository struct {
@@ -21,19 +22,19 @@ func NewInvoiceRepository(db *sql.DB) *SQLInvoiceRepository {
 	return &SQLInvoiceRepository{db: db}
 }
 
-func (r *SQLInvoiceRepository) Save(invoice domain.CreateInvoice) (domain.Invoice, error) {
+func (r *SQLInvoiceRepository) Save(invoice domain.CreateInvoice) (string, error) {
 	fmt.Println("Saving invoice in repository")
 
 	tx, err := r.db.Begin()
 	if err != nil {
-		return domain.Invoice{}, fmt.Errorf("failed to begin transaction: %v", err)
+		return "", fmt.Errorf("failed to begin transaction: %v", err)
 	}
 	defer tx.Rollback()
 
-	var invoiceID int64
+	var invoiceID string
 	err = tx.QueryRow("INSERT INTO invoices (start_date, end_date) VALUES ($1, $2) RETURNING id", invoice.StartDate, invoice.EndDate).Scan(&invoiceID)
 	if err != nil {
-		return domain.Invoice{}, fmt.Errorf("failed to insert invoice: %v", err)
+		return "", fmt.Errorf("failed to insert invoice: %v", err)
 	}
 
 	valueStrings := make([]string, 0, len(invoice.Transactions))
@@ -59,38 +60,66 @@ func (r *SQLInvoiceRepository) Save(invoice domain.CreateInvoice) (domain.Invoic
 
 	_, err = tx.Exec(query, valueArgs...)
 	if err != nil {
-		return domain.Invoice{}, fmt.Errorf("failed to bulk insert transactions: %v", err)
+		return "", fmt.Errorf("failed to bulk insert transactions: %v", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return domain.Invoice{}, fmt.Errorf("failed to commit transaction: %v", err)
+		return "", fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
-	return r.Get(invoiceID)
+	return invoiceID, nil
 }
 
-func (r *SQLInvoiceRepository) Get(id int64) (domain.Invoice, error) {
+func (r *SQLInvoiceRepository) GetInvoice(id string) (domain.Invoice, error) {
 	invoice := domain.Invoice{}
 
-	err := r.db.QueryRow("SELECT id, start_date, end_date FROM invoices WHERE id = $1", id).Scan(&invoice.ID, &invoice.StartDate, &invoice.EndDate)
+	row := r.db.QueryRow(
+		"SELECT id, start_date, end_date FROM invoices WHERE id = $1",
+		id,
+	)
+	err := row.Scan(
+		&invoice.ID,
+		&invoice.StartDate,
+		&invoice.EndDate,
+	)
+
 	if err != nil {
 		return domain.Invoice{}, fmt.Errorf("failed to query invoice: %v", err)
 	}
 
-	transactions, err := r.db.Query("SELECT id, amount, date, buyer, vendor FROM transactions WHERE invoice_id = $1", id)
-	if err != nil {
-		return domain.Invoice{}, fmt.Errorf("failed to query transactions: %v", err)
-	}
-	defer transactions.Close()
-
-	for transactions.Next() {
-		var transaction domain.Transaction
-		err = transactions.Scan(&transaction.ID, &transaction.Amount, &transaction.Date, &transaction.Buyer, &transaction.Vendor)
-		if err != nil {
-			return domain.Invoice{}, fmt.Errorf("failed to scan transaction: %v", err)
-		}
-		invoice.Transactions = append(invoice.Transactions, transaction)
-	}
-
 	return invoice, nil
+}
+
+func (r *SQLInvoiceRepository) GetTransactions(id string) ([]domain.Transaction, error) {
+	transactions := []domain.Transaction{}
+
+	rows, err := r.db.Query(
+		"SELECT id, amount, date, buyer, vendor FROM transactions WHERE invoice_id = $1",
+		id,
+	)
+
+	if err != nil {
+		return []domain.Transaction{}, fmt.Errorf("failed to query transactions: %v", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var transaction domain.Transaction
+		err := rows.Scan(
+			&transaction.ID,
+			&transaction.Amount,
+			&transaction.Date,
+			&transaction.Buyer,
+			&transaction.Vendor,
+		)
+
+		if err != nil {
+			return []domain.Transaction{}, fmt.Errorf("failed to query transactions: %v", err)
+		}
+
+		transactions = append(transactions, transaction)
+	}
+
+	return transactions, nil
 }

@@ -17,6 +17,7 @@ func main() {
 	r := gin.Default()
 
 	r.POST("/invoice", invoiceHandler.Save)
+	r.GET("/invoice/:id", invoiceHandler.Get)
 
 	r.Run()
 

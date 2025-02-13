@@ -13,7 +13,8 @@ import (
 )
 
 type InvoiceService interface {
-	Save(multipart.File) (domain.Invoice, error)
+	Save(multipart.File) (string, error)
+	Get(string) (domain.Invoice, error)
 }
 
 type invoiceService struct {
@@ -24,19 +25,35 @@ func NewInvoiceService(invoiceRepository repository.InvoiceRepository) *invoiceS
 	return &invoiceService{invoiceRepository: invoiceRepository}
 }
 
-func (s *invoiceService) Save(file multipart.File) (domain.Invoice, error) {
+func (s *invoiceService) Save(file multipart.File) (string, error) {
 	createInvoice, err := parse(file)
 
 	if err != nil {
-		return domain.Invoice{}, err
+		return "", err
 	}
 
-	savedInvoice, err := s.invoiceRepository.Save(createInvoice)
+	invoiceId, err := s.invoiceRepository.Save(createInvoice)
+	if err != nil {
+		return "", err
+	}
+
+	return invoiceId, nil
+}
+
+func (s *invoiceService) Get(invoiceId string) (domain.Invoice, error) {
+	invoice, err := s.invoiceRepository.GetInvoice(invoiceId)
 	if err != nil {
 		return domain.Invoice{}, err
 	}
 
-	return savedInvoice, nil
+	transactions, err := s.invoiceRepository.GetTransactions(invoiceId)
+	if err != nil {
+		return domain.Invoice{}, err
+	}
+
+	invoice.Transactions = transactions
+
+	return invoice, nil
 }
 
 func parse(file multipart.File) (domain.CreateInvoice, error) {
@@ -87,29 +104,3 @@ func parse(file multipart.File) (domain.CreateInvoice, error) {
 	}, nil
 
 }
-
-// func parseCSV(csvFile multipart.File) ([]domain.Transaction, error) {
-// 	csvReader := csv.NewReader(csvFile)
-// 	records, err := csvReader.ReadAll()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 		transaction := Transaction{
-// 			Date:       r[0],
-// 			Vendor:     r[1],
-// 			Transactor: r[2],
-// 			Amount:     amount,
-// 		}
-
-// 	transactions := []domain.Transaction{}
-// 	for _, record := range records[1:] {
-
-// 		transactions = append(transactions, domain.Transaction{
-// 			ID:        record[0],
-// 			Amount:    record[1],
-// 			Date:      record[2],
-// 			Buyer:     record[3],
-// 			Vendor:    record[4],
-// 		})
-// }

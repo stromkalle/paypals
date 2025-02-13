@@ -37,12 +37,28 @@ func (h *InvoiceHandler) Save(c *gin.Context) {
 
 	defer csvFile.Close()
 
-	invoice, err := h.invoiceService.Save(csvFile)
+	invoiceId, err := h.invoiceService.Save(csvFile)
 
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to save invoice",
+		})
+		return
+	}
+
+	c.JSON(http.StatusBadRequest, dto.CreateInvoiceResponse{
+		ID: invoiceId,
+	})
+}
+
+func (h *InvoiceHandler) Get(c *gin.Context) {
+	id := c.Param("id")
+
+	invoice, err := h.invoiceService.Get(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to get invoice",
 		})
 		return
 	}
