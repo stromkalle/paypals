@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"example.com/invoice-storage/dto"
 	"example.com/invoice-storage/service"
 	"github.com/gin-gonic/gin"
 )
@@ -46,7 +47,7 @@ func (h *InvoiceHandler) Save(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"invoice": invoice,
+	c.JSON(http.StatusBadRequest, dto.GetInvoiceResponse{
+		Invoice: invoice,
 	})
 }
